@@ -13,9 +13,41 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-// In-memory cache
+// --- CACHING SYSTEM ---
+const CACHE_PREFIX = 'za_meta_v1_';
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 Hours
+
+const getLocalStorage = <T>(key: string): T | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const item = window.localStorage.getItem(CACHE_PREFIX + key);
+    if (!item) return null;
+    const { data, ts } = JSON.parse(item);
+    if (Date.now() - ts > CACHE_TTL) {
+      window.localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+    return data as T;
+  } catch (e) {
+    console.warn('Error reading from local storage', e);
+    return null;
+  }
+};
+
+const setLocalStorage = <T>(key: string, data: T) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload = JSON.stringify({ data, ts: Date.now() });
+    window.localStorage.setItem(CACHE_PREFIX + key, payload);
+  } catch (e) {
+    console.warn('Error saving to local storage (likely full)', e);
+  }
+};
+
+// In-memory cache (Syncs with LocalStorage on hit)
 const teamCache: Record<string, TeamRecommendation> = {};
 const metaCache: Record<string, MetaPokemonData[]> = {};
+const analysisCache: Record<string, PokemonAnalysis> = {};
 
 // Improved Translation Prompt referencing xzonn.top
 const OFFICIAL_ZH_PROMPT = `
@@ -473,11 +505,21 @@ export const getMetaAnalysis = async (
   generation: Generation,
   season: Regulation
 ): Promise<MetaPokemonData[]> => {
-  const cacheKey = `${generation}-${season}`;
+  const cacheKey = `meta-${generation}-${season}`;
+  
+  // 1. Check In-Memory Cache
   if (metaCache[cacheKey]) {
     return metaCache[cacheKey];
   }
 
+  // 2. Check LocalStorage Cache
+  const localData = getLocalStorage<MetaPokemonData[]>(cacheKey);
+  if (localData) {
+    metaCache[cacheKey] = localData; // Sync memory
+    return localData;
+  }
+
+  // 3. Fetch from API
   const client = getAiClient();
   const context = getGenContext(generation, season);
 
@@ -532,15 +574,17 @@ export const getMetaAnalysis = async (
     // Apply Mathematical Model
     const calculatedData = calculateMetaMatrix(parsed, generation);
 
+    // Save to caches (Memory + Local)
     metaCache[cacheKey] = calculatedData;
+    setLocalStorage(cacheKey, calculatedData);
+
     return calculatedData;
   } catch (error) {
     console.error("Meta Analysis Error (Quota or other):", error);
-    // FALLBACK: If API quota exceeded or error, return Static Mock Data
+    // FALLBACK: Return Static Mock Data
     console.warn("Using Fallback/Offline Meta Data due to API Error.");
-    
-    // Recalculate matrix for fallback data to ensure winrates are relative
     const fallbackCalculated = calculateMetaMatrix(FALLBACK_META_DATA, generation);
+    // Do NOT cache fallback data to disk, only return it
     return fallbackCalculated;
   }
 };
@@ -550,6 +594,22 @@ export const analyzePokemon = async (
   generation: Generation,
   season: Regulation
 ): Promise<PokemonAnalysis | null> => {
+  const normalizedName = pokemonName.trim().toLowerCase();
+  const cacheKey = `analysis-${generation}-${season}-${normalizedName}`;
+
+  // 1. Check In-Memory Cache
+  if (analysisCache[cacheKey]) {
+      return analysisCache[cacheKey];
+  }
+
+  // 2. Check LocalStorage Cache
+  const localData = getLocalStorage<PokemonAnalysis>(cacheKey);
+  if (localData) {
+      analysisCache[cacheKey] = localData;
+      return localData;
+  }
+
+  // 3. Fetch from API
   const client = getAiClient();
   const context = getGenContext(generation, season);
 
@@ -615,17 +675,20 @@ export const analyzePokemon = async (
       }
     });
 
-    return JSON.parse(response.text);
+    const result = JSON.parse(response.text);
+    
+    // Save to caches
+    analysisCache[cacheKey] = result;
+    setLocalStorage(cacheKey, result);
+
+    return result;
   } catch (error) {
     console.error("Pokemon Analysis Error (Quota or other):", error);
-    // FALLBACK: If specific pokemon analysis fails, try to return mock if it matches, or null
-    
+    // FALLBACK
     const lowerName = pokemonName.toLowerCase();
     if (lowerName.includes('charizard') || lowerName.includes('喷火龙')) {
         return FALLBACK_ANALYSIS;
     }
-
-    // For others, return a procedural mock instead of crashing
     return generateMockAnalysis(pokemonName);
   }
 };
@@ -636,8 +699,15 @@ export const generateTeam = async (
   generation: Generation,
   season: Regulation
 ): Promise<TeamRecommendation | null> => {
-  const cacheKey = `${generation}-${season}-${promptText}-${lang}`;
+  const cacheKey = `team-${generation}-${season}-${promptText.trim()}-${lang}`;
+  
   if (teamCache[cacheKey]) return teamCache[cacheKey];
+
+  const localData = getLocalStorage<TeamRecommendation>(cacheKey);
+  if (localData) {
+      teamCache[cacheKey] = localData;
+      return localData;
+  }
 
   const client = getAiClient();
   const context = getGenContext(generation, season);
@@ -681,11 +751,13 @@ export const generateTeam = async (
     });
 
     const result = JSON.parse(response.text);
+    
     teamCache[cacheKey] = result;
+    setLocalStorage(cacheKey, result);
+
     return result;
   } catch (error) {
     console.error("Team Gen Error (Quota or other):", error);
-    // Return Fallback Team instead of null
     return generateMockTeam(promptText);
   }
 };
