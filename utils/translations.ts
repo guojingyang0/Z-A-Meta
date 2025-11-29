@@ -1,4 +1,5 @@
 
+
 export const TRANSLATIONS = {
   en: {
     appTitle: "Z-A META",
@@ -60,7 +61,7 @@ export const TRANSLATIONS = {
     prevForm: "Base / Pre-Evo",
     errorAnalyze: "Could not analyze Pokémon. Please check spelling.",
     statSpeed: "SPE (CDR)",
-    battleTopology: "Neural Matchup Network (Drag to Organize)",
+    battleTopology: "Battle Relationship Topology",
     viewSimple: "Simple",
     viewAdvanced: "Topology",
 
@@ -71,7 +72,7 @@ export const TRANSLATIONS = {
     generateBtn: "GENERATE",
     buildingBtn: "BUILDING...",
     item: "ITEM",
-    ability: "ABILITY",
+    ability: "特性",
     nature: "NATURE",
     moveset: "MOVESET",
 
@@ -144,7 +145,7 @@ export const TRANSLATIONS = {
     prevForm: "基础/进化前",
     errorAnalyze: "无法分析该宝可梦，请检查拼写。",
     statSpeed: "速度 (CDR)",
-    battleTopology: "对战神经网络 (可拖拽整理)",
+    battleTopology: "对战关系图",
     viewSimple: "简单",
     viewAdvanced: "拓扑模式",
 

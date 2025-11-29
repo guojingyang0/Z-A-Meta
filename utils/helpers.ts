@@ -5,21 +5,24 @@
 export const getPokemonSpriteUrl = (name: string, id?: number): string => {
   if (!name) return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png';
 
-  // 1. Lowercase
-  let lower = name.toLowerCase();
+  // 1. Lowercase and Trim (Crucial for correct suffix detection)
+  let lower = name.toLowerCase().trim();
 
   // 2. Handle specific form keywords before stripping chars
   let suffix = '';
   
-  // Specific handling for Mega X/Y to prevent 'charizardy-megay' issues
-  // We strip the phrase from the base name immediately to leave the clean species name
-  if (lower.includes('mega x')) {
-    suffix = '-megax';
-    lower = lower.replace('mega x', ''); 
-  }
-  else if (lower.includes('mega y')) {
+  // Specific handling for Mega X/Y (e.g. "Mega Charizard Y")
+  // We need to catch "mega ... y" pattern before general "mega" replacement
+  // Use regex check for trailing ' y' or '-y' to be safe against spaces
+  if (lower.includes('mega') && (lower.endsWith(' y') || lower.endsWith('-y'))) {
     suffix = '-megay';
-    lower = lower.replace('mega y', '');
+    // Remove keywords to isolate species
+    // regex /[\s-]y$/ replaces " y" or "-y" at the end of string
+    lower = lower.replace('mega', '').replace(/[\s-]y$/, ''); 
+  }
+  else if (lower.includes('mega') && (lower.endsWith(' x') || lower.endsWith('-x'))) {
+    suffix = '-megax';
+    lower = lower.replace('mega', '').replace(/[\s-]x$/, '');
   }
   else if (lower.includes('mega') && !lower.includes('meganium')) suffix = '-mega'; // prevent meganium false positive
   else if (lower.includes('gmax') || lower.includes('gigantamax')) suffix = '-gmax';
@@ -82,9 +85,6 @@ export const getPokemonSpriteUrl = (name: string, id?: number): string => {
       finalName = overrides[finalName];
   }
 
-  // Double check some common errors
-  if (finalName === 'charizard-mega') finalName = 'charizard-megax'; // Default to X if unspecified? Or maybe standard mega
-  
   return `https://play.pokemonshowdown.com/sprites/ani/${finalName}.gif`;
 };
 

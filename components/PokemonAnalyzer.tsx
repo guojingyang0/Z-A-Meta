@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { analyzePokemon } from '../services/geminiService';
 import { PokemonAnalysis, Language, Generation, Regulation, MatchupNode, PokemonType } from '../types';
@@ -46,10 +47,12 @@ export const PokemonAnalyzer: React.FC<Props> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [hoveredLink, setHoveredLink] = useState<{ u: string, v: string } | null>(null);
 
   const requestRef = useRef<number>(0);
   const dragRef = useRef<{ id: string, startX: number, startY: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // Ref for the container to calculate relative tooltip pos
   const centerNodePos = { x: 300, y: 200 }; // Center of the SVG canvas
 
   // Effect to handle initialization and search updates
@@ -252,10 +255,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
       e.stopPropagation(); // Prevent panning when clicking a node
       setIsPanning(false);
       
-      const svg = svgRef.current;
-      if (!svg) return;
-      
-      // Calculate start pos logic if needed, but mostly just flagging state
       setNodes(prev => prev.map(n => n.id === id ? { ...n, isDragging: true, vx: 0, vy: 0 } : n));
       dragRef.current = { id, startX: 0, startY: 0 }; // coords updated in mousemove
   };
@@ -308,13 +307,34 @@ export const PokemonAnalyzer: React.FC<Props> = ({
 
   // Render Force Directed Graph
   const renderForceDirectedGraph = () => {
+      // Calculate Tooltip Position relative to Container
+      const getTooltipStyle = () => {
+          if (!hoveredNode) return { display: 'none' };
+          
+          // Calculate node's position in screen space within the container
+          const nodeScreenX = transform.x + hoveredNode.x * transform.scale;
+          const nodeScreenY = transform.y + hoveredNode.y * transform.scale;
+          
+          // Basic Bounds Checking Logic
+          // Assume Container Width ~ 100% or 1100px max, Height ~ 500px
+          // This logic tries to keep tooltip visible
+          let left = nodeScreenX + 15 * transform.scale + 10;
+          let top = nodeScreenY + 15 * transform.scale + 10;
+
+          // If overflowing right (rough estimate), flip left
+          if (left > 800) left = nodeScreenX - 220; 
+          // If overflowing bottom, flip up
+          if (top > 400) top = nodeScreenY - 100;
+
+          return {
+              left: `${Math.max(10, left)}px`,
+              top: `${Math.max(10, top)}px`,
+          };
+      };
+
       return (
-          <div className="w-full h-[500px] relative flex justify-center items-center select-none overflow-hidden bg-slate-50/50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/5">
-             {/* Instructions Overlay */}
-             <div className="absolute top-2 left-2 pointer-events-none z-10 flex flex-col gap-1">
-                <span className="text-[10px] text-slate-400 dark:text-gray-600 font-mono">DRAG NODES TO REARRANGE</span>
-                <span className="text-[10px] text-slate-400 dark:text-gray-600 font-mono">SCROLL TO ZOOM • DRAG BG TO PAN</span>
-             </div>
+          // Main Container - NO overflow:hidden here to allow tooltip to poke out if positioned absolutely relative to this
+          <div ref={containerRef} className="w-full h-[500px] relative flex justify-center items-center select-none bg-slate-50/50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/5 group">
              
              {/* Controls Overlay */}
              <div className="absolute bottom-4 right-4 z-10 flex gap-2">
@@ -327,14 +347,11 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                  </button>
              </div>
 
-             {/* Hover Tooltip Overlay - Rendered OUTSIDE SVG to avoid clipping */}
+             {/* Hover Tooltip Overlay - Rendered OUTSIDE SVG to avoid clipping, Positioned Dynamically */}
              {hoveredNode && (
                  <div 
-                    className="absolute z-20 pointer-events-none bg-gray-900/95 backdrop-blur text-white text-xs p-3 rounded shadow-xl border border-white/10 w-48 animate-fade-in"
-                    style={{
-                        bottom: '20px',
-                        left: '20px',
-                    }}
+                    className="absolute z-50 pointer-events-none bg-gray-900/95 backdrop-blur text-white text-xs p-3 rounded shadow-xl border border-white/10 w-48 animate-fade-in origin-top-left"
+                    style={getTooltipStyle() as React.CSSProperties}
                  >
                      <div className="font-bold mb-1 border-b border-white/20 pb-1 text-za-cyan text-sm">
                          {lang === 'zh' ? hoveredNode.opponentZh : hoveredNode.opponentEn}
@@ -351,142 +368,172 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                  </div>
              )}
 
-             <svg 
-                ref={svgRef}
-                width="100%" height="100%" 
-                className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
-                onMouseDown={handleSvgMouseDown}
-                onMouseMove={handleSvgMouseMove}
-                onMouseUp={handleSvgMouseUp}
-                onMouseLeave={handleSvgMouseUp}
-                onWheel={handleWheel}
-             >
-                 <defs>
-                     <marker id="arrow-win" markerWidth="6" markerHeight="6" refX="24" refY="3" orient="auto">
-                         <path d="M0,0 L0,6 L6,3 z" fill="#22c55e" />
-                     </marker>
-                     <marker id="arrow-lose" markerWidth="6" markerHeight="6" refX="24" refY="3" orient="auto">
-                         <path d="M0,0 L0,6 L6,3 z" fill="#ef4444" />
-                     </marker>
-                     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                       <feGaussianBlur stdDeviation="2" result="blur" />
-                       <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                     </filter>
-                 </defs>
-                 
-                 <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}>
-                    {/* 1. Draw Mesh Connections (Between Opponents) */}
-                    {nodes.map((nodeA, i) => {
-                        return nodes.map((nodeB, j) => {
-                            if (i >= j) return null; // Avoid duplicate checks
-                            
-                            // Determine types
-                            const typesA = (nodeA.opponentTypes || []).map(t => 
-                                t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
-                            ) as PokemonType[];
-
-                            const typesB = (nodeB.opponentTypes || []).map(t => 
-                                t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
-                            ) as PokemonType[];
-
-                            let multAtoB = 0;
-                            typesA.forEach(atk => {
-                                typesB.forEach(def => multAtoB = Math.max(multAtoB, getEffectiveness(atk, def)));
-                            });
-
-                            let multBtoA = 0;
-                            typesB.forEach(atk => {
-                                typesA.forEach(def => multBtoA = Math.max(multBtoA, getEffectiveness(atk, def)));
-                            });
-
-                            // Draw Line if significant interaction
-                            if (multAtoB > 1 || multBtoA > 1) {
-                                const isStrong = multAtoB >= 2 || multBtoA >= 2;
-                                return (
-                                    <line 
-                                        key={`mesh-${i}-${j}`} 
-                                        x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} 
-                                        stroke={isStrong ? "#a855f7" : "#cbd5e1"} 
-                                        strokeWidth={isStrong ? 1.5 : 0.5} 
-                                        strokeOpacity={isStrong ? 0.4 : 0.2} 
-                                        strokeDasharray={isStrong ? "3,3" : "0"}
-                                    />
-                                );
-                            }
-                            return null;
-                        });
-                    })}
-
-                    {/* 2. Draw Main Connections (Center to Nodes) */}
-                    {nodes.map((node, i) => {
-                        const color = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
-                        const marker = node.result === 'win' ? 'url(#arrow-win)' : node.result === 'lose' ? 'url(#arrow-lose)' : '';
-
-                        return (
-                            <line 
-                                key={`link-${i}`}
-                                x1={centerNodePos.x} y1={centerNodePos.y} 
-                                x2={node.x} y2={node.y} 
-                                stroke={color} 
-                                strokeWidth="1.5" 
-                                strokeOpacity="0.6"
-                                markerEnd={marker}
-                            />
-                        );
-                    })}
+             {/* SVG Container with Overflow Hidden to clip graph but not tooltip */}
+             <div className="absolute inset-0 overflow-hidden rounded-xl">
+                <svg 
+                    ref={svgRef}
+                    width="100%" height="100%" 
+                    className={`w-full h-full ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    onMouseDown={handleSvgMouseDown}
+                    onMouseMove={handleSvgMouseMove}
+                    onMouseUp={handleSvgMouseUp}
+                    onMouseLeave={handleSvgMouseUp}
+                    onWheel={handleWheel}
+                >
+                    <defs>
+                        <marker id="arrow-win" markerWidth="6" markerHeight="6" refX="24" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L6,3 z" fill="#22c55e" />
+                        </marker>
+                        <marker id="arrow-lose" markerWidth="6" markerHeight="6" refX="24" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L6,3 z" fill="#ef4444" />
+                        </marker>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="2" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
                     
-                    {/* 3. Center Node (Fixed) */}
-                    <g transform={`translate(${centerNodePos.x}, ${centerNodePos.y})`}>
-                        <polygon 
-                            points="-25,-43 25,-43 50,0 25,43 -25,43 -50,0" 
-                            fill="#0f172a" 
-                            stroke="#00f3ff" 
-                            strokeWidth="3" 
-                            filter="url(#glow)"
-                        />
-                        <image 
-                            href={getPokemonSpriteUrl(data!.nameEn)} 
-                            x="-30" y="-30" width="60" height="60" 
-                            style={{ pointerEvents: 'none' }}
-                        />
-                    </g>
-
-                    {/* 4. Draggable Nodes */}
-                    {nodes.map((node, i) => {
-                        const resultColor = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
-                        const opponentName = lang === 'zh' ? node.opponentZh : node.opponentEn;
-
-                        return (
-                            <g 
-                                key={`node-g-${i}`} 
-                                transform={`translate(${node.x}, ${node.y})`}
-                                onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
-                                onMouseEnter={() => setHoveredNode(node)}
-                                onMouseLeave={() => setHoveredNode(null)}
-                                className="cursor-pointer hover:opacity-100 transition-opacity duration-200"
-                            >
-                                <circle r="22" fill="#1e293b" stroke={resultColor} strokeWidth={node.isDragging ? 3 : 1.5} />
+                    <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}>
+                        {/* 1. Draw Mesh Connections (Between Opponents) */}
+                        {nodes.map((nodeA, i) => {
+                            return nodes.map((nodeB, j) => {
+                                if (i >= j) return null; // Avoid duplicate checks
                                 
-                                <image 
-                                    href={getPokemonSpriteUrl(node.opponentEn)} 
-                                    x="-20" y="-20" width="40" height="40" 
-                                    style={{ pointerEvents: 'none' }}
-                                    onError={(e) => {
-                                        (e.target as SVGImageElement).href.baseVal = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
-                                    }}
-                                />
+                                // Determine types
+                                const typesA = (nodeA.opponentTypes || []).map(t => 
+                                    t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+                                ) as PokemonType[];
 
-                                {/* Text Label */}
-                                <foreignObject x="-40" y="24" width="80" height="20">
-                                    <div className={`text-[9px] font-bold text-center bg-black/70 rounded text-white px-1 overflow-hidden text-ellipsis whitespace-nowrap`}>
-                                        {opponentName}
-                                    </div>
-                                </foreignObject>
-                            </g>
-                        );
-                    })}
-                 </g>
-             </svg>
+                                const typesB = (nodeB.opponentTypes || []).map(t => 
+                                    t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+                                ) as PokemonType[];
+
+                                let multAtoB = 0;
+                                typesA.forEach(atk => {
+                                    typesB.forEach(def => multAtoB = Math.max(multAtoB, getEffectiveness(atk, def)));
+                                });
+
+                                let multBtoA = 0;
+                                typesB.forEach(atk => {
+                                    typesA.forEach(def => multBtoA = Math.max(multBtoA, getEffectiveness(atk, def)));
+                                });
+
+                                // Draw Line if significant interaction
+                                if (multAtoB > 1 || multBtoA > 1) {
+                                    const isStrong = multAtoB >= 2 || multBtoA >= 2;
+                                    const isHovered = hoveredLink && (
+                                        (hoveredLink.u === nodeA.id && hoveredLink.v === nodeB.id) ||
+                                        (hoveredLink.u === nodeB.id && hoveredLink.v === nodeA.id)
+                                    );
+
+                                    return (
+                                        <g key={`mesh-group-${i}-${j}`}>
+                                            {/* Hit Area (Invisible thick line for easier hover) */}
+                                            <line 
+                                                x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} 
+                                                stroke="transparent" 
+                                                strokeWidth="15" 
+                                                className="cursor-pointer"
+                                                onMouseEnter={() => setHoveredLink({ u: nodeA.id, v: nodeB.id })}
+                                                onMouseLeave={() => setHoveredLink(null)}
+                                            />
+                                            {/* Visible Line */}
+                                            <line 
+                                                x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} 
+                                                stroke={isStrong ? "#a855f7" : "#cbd5e1"} 
+                                                strokeWidth={isHovered ? 2.5 : (isStrong ? 1.5 : 0.5)} 
+                                                strokeOpacity={isHovered ? 1 : (isStrong ? 0.4 : 0.2)} 
+                                                strokeDasharray={isStrong ? "3,3" : "0"}
+                                                className="pointer-events-none transition-all duration-200"
+                                            />
+                                        </g>
+                                    );
+                                }
+                                return null;
+                            });
+                        })}
+
+                        {/* 2. Draw Main Connections (Center to Nodes) */}
+                        {nodes.map((node, i) => {
+                            const color = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
+                            const marker = node.result === 'win' ? 'url(#arrow-win)' : node.result === 'lose' ? 'url(#arrow-lose)' : '';
+
+                            return (
+                                <line 
+                                    key={`link-${i}`}
+                                    x1={centerNodePos.x} y1={centerNodePos.y} 
+                                    x2={node.x} y2={node.y} 
+                                    stroke={color} 
+                                    strokeWidth="1.5" 
+                                    strokeOpacity="0.6"
+                                    markerEnd={marker}
+                                />
+                            );
+                        })}
+                        
+                        {/* 3. Center Node (Fixed) */}
+                        <g transform={`translate(${centerNodePos.x}, ${centerNodePos.y})`}>
+                            <polygon 
+                                points="-25,-43 25,-43 50,0 25,43 -25,43 -50,0" 
+                                fill="#0f172a" 
+                                stroke="#00f3ff" 
+                                strokeWidth="3" 
+                                filter="url(#glow)"
+                            />
+                            <image 
+                                href={getPokemonSpriteUrl(data!.nameEn)} 
+                                x="-30" y="-30" width="60" height="60" 
+                                style={{ pointerEvents: 'none' }}
+                            />
+                        </g>
+
+                        {/* 4. Draggable Nodes */}
+                        {nodes.map((node, i) => {
+                            const resultColor = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
+                            const opponentName = lang === 'zh' ? node.opponentZh : node.opponentEn;
+                            
+                            // Check if this node is part of the hovered link
+                            const isLinked = hoveredLink && (hoveredLink.u === node.id || hoveredLink.v === node.id);
+
+                            return (
+                                <g 
+                                    key={`node-g-${i}`} 
+                                    transform={`translate(${node.x}, ${node.y})`}
+                                    onMouseDown={(e) => handleNodeMouseDown(node.id, e)}
+                                    onMouseEnter={() => setHoveredNode(node)}
+                                    onMouseLeave={() => setHoveredNode(null)}
+                                    className={`cursor-pointer transition-all duration-200 ${isLinked ? 'opacity-100 z-10' : 'hover:opacity-100'}`}
+                                    style={{ opacity: (hoveredLink && !isLinked) ? 0.3 : 1 }}
+                                >
+                                    <circle 
+                                        r={isLinked ? 25 : 22} 
+                                        fill={isLinked ? "#334155" : "#1e293b"} 
+                                        stroke={resultColor} 
+                                        strokeWidth={node.isDragging || isLinked ? 3 : 1.5} 
+                                        className="transition-all duration-200"
+                                    />
+                                    
+                                    <image 
+                                        href={getPokemonSpriteUrl(node.opponentEn)} 
+                                        x="-20" y="-20" width="40" height="40" 
+                                        style={{ pointerEvents: 'none' }}
+                                        onError={(e) => {
+                                            (e.target as SVGImageElement).href.baseVal = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
+                                        }}
+                                    />
+
+                                    {/* Text Label */}
+                                    <foreignObject x="-40" y="24" width="80" height="20">
+                                        <div className={`text-[9px] font-bold text-center bg-black/70 rounded text-white px-1 overflow-hidden text-ellipsis whitespace-nowrap`}>
+                                            {opponentName}
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                            );
+                        })}
+                    </g>
+                </svg>
+             </div>
           </div>
       );
   };
