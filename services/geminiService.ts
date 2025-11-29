@@ -1,12 +1,14 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { PokemonAnalysis, TeamRecommendation, MetaPokemonData, Language, Generation, Regulation, PokemonType } from '../types';
 import { getEffectiveness } from '../constants';
 
 const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Runtime safety check for process.env to prevent crashes in browsers
+  const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+
   if (!apiKey) {
-    throw new Error("API Key not found in environment");
+    console.warn("API Key not found in environment. Using Offline Mode.");
+    return null; // Return null client to trigger immediate fallback
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -246,9 +248,57 @@ const FALLBACK_ANALYSIS: PokemonAnalysis = {
 };
 
 /**
+ * Generates a mock analysis for ANY pokemon if API Quota is hit
+ */
+const generateMockAnalysis = (name: string): PokemonAnalysis => {
+    return {
+        nameEn: name,
+        nameZh: name,
+        types: ["Normal"],
+        roleEn: "Analysis Unavailable (Offline)",
+        roleZh: "暂时无法分析 (离线)",
+        tier: "?",
+        stats: { hp: 80, attack: 80, defense: 80, spAtk: 80, spDef: 80, speed: 80 },
+        comparisonStats: { hp: 70, attack: 70, defense: 70, spAtk: 70, spDef: 70, speed: 70 },
+        comparisonLabel: "Base",
+        strengthsEn: ["Unknown"],
+        strengthsZh: ["未知"],
+        weaknessesEn: ["Fighting"],
+        weaknessesZh: ["格斗"],
+        coverageEn: ["Normal"],
+        coverageZh: ["一般"],
+        partnersEn: ["None"],
+        partnersZh: ["无"],
+        matchupNetwork: [],
+        summaryEn: `System is currently in Offline Mode due to high traffic. Real-time analysis for ${name} is temporarily unavailable. Please try again later.`,
+        summaryZh: `由于系统繁忙，当前处于离线模式。暂时无法获取 ${name} 的实时分析数据。请稍后再试。`
+    };
+};
+
+/**
+ * Generates a mock team if API Quota is hit
+ */
+const generateMockTeam = (prompt: string): TeamRecommendation => {
+    return {
+        archetype: "Offline Balanced Team",
+        explanation: "API Quota Exceeded. Displaying a standard balanced team template for demonstration purposes.",
+        members: [
+            { name: "Mega Charizard Y", item: "Charizardite Y", ability: "Drought", nature: "Timid", moves: ["Heat Wave", "Solar Beam", "Roost", "Scorching Sands"], role: "Special Attacker" },
+            { name: "Zygarde (Complete)", item: "Leftovers", ability: "Power Construct", nature: "Adamant", moves: ["Thousand Arrows", "Dragon Dance", "Rest", "Sleep Talk"], role: "Tank / Wincon" },
+            { name: "Aegislash", item: "Weakness Policy", ability: "Stance Change", nature: "Quiet", moves: ["King's Shield", "Shadow Ball", "Close Combat", "Shadow Sneak"], role: "Pivot" },
+            { name: "Tapu Fini", item: "Choice Scarf", ability: "Misty Surge", nature: "Bold", moves: ["Moonblast", "Scald", "Defog", "Trick"], role: "Support" },
+            { name: "Rillaboom", item: "Assault Vest", ability: "Grassy Surge", nature: "Adamant", moves: ["Grassy Glide", "Wood Hammer", "High Horsepower", "U-turn"], role: "Physical Attacker" },
+            { name: "Incineroar", item: "Sitrus Berry", ability: "Intimidate", nature: "Careful", moves: ["Fake Out", "Parting Shot", "Flare Blitz", "Knock Off"], role: "Support" },
+        ]
+    };
+};
+
+/**
  * Helper to handle Rate Limits (429) with Exponential Backoff
  */
 const generateContentWithRetry = async (client: any, params: any, maxRetries = 2) => {
+  if (!client) throw new Error("No API Client Available");
+  
   let retries = 0;
   let delay = 3000; // Increased start delay to 3 seconds
 
@@ -347,8 +397,8 @@ const calculateMetaMatrix = (pokemonList: MetaPokemonData[], generation: Generat
       });
 
       // Score Delta:
-      // If I hit you for 2x (2) and you hit me for 1x (1) -> Delta +1
-      // If I hit you for 4x (4) and you hit me for 0.5x -> Delta +3.5
+      // If I hit for 2x (2) and you hit me for 1x (1) -> Delta +1
+      // If I hit for 4x (4) and you hit me for 0.5x -> Delta +3.5
       totalAdvantage += (maxOffensiveMult - maxDefensiveMult);
     });
 
@@ -569,17 +619,14 @@ export const analyzePokemon = async (
   } catch (error) {
     console.error("Pokemon Analysis Error (Quota or other):", error);
     // FALLBACK: If specific pokemon analysis fails, try to return mock if it matches, or null
-    // Ideally we would have a huge database, but for this demo, let's return a Generic Fallback 
-    // if the user happened to click Charizard Y or Zygarde (common clicks).
-    // Otherwise return null and let UI show error.
     
     const lowerName = pokemonName.toLowerCase();
     if (lowerName.includes('charizard') || lowerName.includes('喷火龙')) {
         return FALLBACK_ANALYSIS;
     }
 
-    // For others, we unfortunately can't fabricate deep analysis on the fly without API.
-    return null; 
+    // For others, return a procedural mock instead of crashing
+    return generateMockAnalysis(pokemonName);
   }
 };
 
@@ -638,6 +685,7 @@ export const generateTeam = async (
     return result;
   } catch (error) {
     console.error("Team Gen Error (Quota or other):", error);
-    return null;
+    // Return Fallback Team instead of null
+    return generateMockTeam(promptText);
   }
 };
