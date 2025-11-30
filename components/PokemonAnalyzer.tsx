@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { analyzePokemon } from '../services/geminiService';
 import { PokemonAnalysis, Language, Generation, Regulation, MatchupNode, PokemonType } from '../types';
@@ -592,7 +591,7 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                             <div>
                                 <h2 className="text-4xl font-display font-bold text-slate-800 dark:text-white mb-2">{getName()}</h2>
                                 <div className="flex gap-2">
-                                    {data.types.map(type => <TypeBadge key={type} type={type} lang={lang} />)}
+                                    {(data.types || []).map(type => <TypeBadge key={type} type={type} lang={lang} />)}
                                 </div>
                             </div>
                             <div className="text-right">

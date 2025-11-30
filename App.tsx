@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { MetaDashboard } from './components/MetaDashboard';
 import { PokemonAnalyzer } from './components/PokemonAnalyzer';
 import { TeamBuilder } from './components/TeamBuilder';
+import { TeamSynergy } from './components/TeamSynergy';
 import { TypeCalculator } from './components/TypeCalculator';
 import { ViewState, Language, Theme, Generation, Regulation, MetaPokemonData, PokemonAnalysis } from './types';
 
@@ -68,6 +70,7 @@ function App() {
                 onAnalyzeComplete={handleAnalyzerUpdate}
             />
         );
+      // 'synergy' is now a tab inside MetaDashboard, removed as top-level view
       case 'team':
         return <TeamBuilder lang={lang} generation={generation} season={season} />;
       case 'calculator':

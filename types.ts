@@ -90,6 +90,52 @@ export interface TeamRecommendation {
   members: TeamMember[];
 }
 
+export interface TeamSynergyAnalysis {
+  teamName: string;
+  synergyScore: number; // 0-100 (Overall Cohesion)
+  
+  // New Metrics for "Squad Meta Analysis"
+  winRate: number; // 0-100 (Projected against current meta)
+  usageRate: number; // 0-100 (Estimated popularity)
+  defensiveScore: number; // 0-100 (Joint Defense / Type Coverage)
+  offensiveScore: number; // 0-100 (Joint Attack / Combo Potential)
+
+  roleDistributionEn: string;
+  roleDistributionZh: string;
+  
+  // Combo chains (Action RPG specific)
+  combosEn: string[];
+  combosZh: string[];
+  
+  strengthsEn: string[];
+  strengthsZh: string[];
+  
+  majorWeaknessesEn: string[];
+  majorWeaknessesZh: string[];
+  
+  overallAnalysisEn: string;
+  overallAnalysisZh: string;
+}
+
+// New Interface for Ranked Teams List
+export interface MetaTeamData {
+  rank: number;
+  nameEn: string; // e.g. "The Big Three"
+  nameZh: string;
+  members: string[]; // List of 3 Pokemon names (English)
+  membersZh: string[]; // List of 3 Pokemon names (Chinese)
+  
+  winRate: number;
+  usageRate: number;
+  synergyScore: number;
+
+  coreStrategyEn: string;
+  coreStrategyZh: string;
+  
+  analysisEn: string;
+  analysisZh: string;
+}
+
 export interface MetaPokemonData {
   rank: number;
   nameEn: string; 
@@ -114,7 +160,7 @@ export interface MetaPokemonData {
   analysisZh: string;
 }
 
-export type ViewState = 'meta' | 'analyze' | 'team' | 'calculator';
+export type ViewState = 'meta' | 'analyze' | 'team' | 'synergy' | 'calculator';
 
 export type Language = 'en' | 'zh';
 export type Theme = 'dark' | 'light';

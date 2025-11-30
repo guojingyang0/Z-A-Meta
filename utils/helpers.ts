@@ -78,7 +78,12 @@ export const getPokemonSpriteUrl = (name: string, id?: number): string => {
     'urshifu': 'urshifu', // single strike default
     'urshifurapidstrike': 'urshifu-rs', // catch if suffix logic missed
     'typenull': 'typenull',
-    'jangmoo': 'jangmo-o', 
+    'jangmoo': 'jangmo-o',
+    'rotomwash': 'rotom-wash',
+    'rotomheat': 'rotom-heat',
+    'rotommow': 'rotom-mow',
+    'rotomfrost': 'rotom-frost',
+    'rotomfan': 'rotom-fan',
   };
 
   if (overrides[finalName]) {

@@ -28,7 +28,6 @@ export const Layout: React.FC<Props> = ({
   const navItems: { id: ViewState; label: string; icon: string }[] = [
     { id: 'meta', label: t.meta, icon: 'M' },
     { id: 'analyze', label: t.analyzer, icon: 'A' },
-    { id: 'synergy', label: t.synergy, icon: 'S' },
     { id: 'team', label: t.builder, icon: 'B' },
     { id: 'calculator', label: t.typeChart, icon: 'T' },
   ];

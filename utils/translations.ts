@@ -1,5 +1,4 @@
 
-
 export const TRANSLATIONS = {
   en: {
     appTitle: "Z-A META",
@@ -7,6 +6,7 @@ export const TRANSLATIONS = {
     meta: "META",
     analyzer: "UNIT ANALYSIS",
     builder: "BUILDER",
+    synergy: "SQUAD RANKINGS",
     typeChart: "TYPE CHART",
     liveConnection: "LIVE CONNECTION",
     systemStatus: "SYSTEM STATUS",
@@ -76,6 +76,24 @@ export const TRANSLATIONS = {
     nature: "NATURE",
     moveset: "MOVESET",
 
+    // Synergy
+    synergyTitle: "META SQUAD RANKINGS",
+    synergyDesc: "Top-rated 3-Pokémon cores dominating the current environment. Analysis based on Joint Defense, Combo Chaining, and AOE Synergy.",
+    synergyPlaceholder: "Enter Pokémon",
+    analyzeSquad: "ANALYZE SQUAD",
+    score: "SYNERGY",
+    combos: "TACTICAL COMBOS",
+    teamRole: "TEAM COMPOSITION",
+    majorWeakness: "CRITICAL VULNERABILITIES",
+    
+    // New Synergy Metrics
+    projWinRate: "WIN RATE",
+    estUsage: "USAGE",
+    defScore: "JOINT DEFENSE",
+    offScore: "JOINT ATTACK",
+    defDesc: "Switching safety & resistance coverage",
+    offDesc: "Focus fire & AOE combo potential",
+
     // Calculator
     defAnalysis: "Defensive Analysis",
     primaryType: "Primary Type",
@@ -91,6 +109,7 @@ export const TRANSLATIONS = {
     meta: "环境监控",
     analyzer: "单体分析",
     builder: "战术构建",
+    synergy: "小队排名",
     typeChart: "属性计算",
     liveConnection: "实时连接",
     systemStatus: "系统状态",
@@ -101,7 +120,7 @@ export const TRANSLATIONS = {
     connecting: "正在建立与对战数据库的连接...",
     failedMeta: "无法获取环境分析报告。",
     errorConnection: "连接 Z-A 网络失败。",
-    winRate: "预测胜率",
+    winRate: "胜率",
     usageRate: "使用率",
     keyMoves: "常见配招",
     
@@ -159,6 +178,24 @@ export const TRANSLATIONS = {
     ability: "特性",
     nature: "性格",
     moveset: "配招",
+
+    // Synergy
+    synergyTitle: "环境小队排名",
+    synergyDesc: "当前环境中最具统治力的三人核心组合。分析基于联防能力、连招衔接及 AOE 广域协同。",
+    synergyPlaceholder: "输入宝可梦名称",
+    analyzeSquad: "评估小队",
+    score: "协同分",
+    combos: "战术连招",
+    teamRole: "队伍构成",
+    majorWeakness: "致命弱点",
+    
+    // New Synergy Metrics
+    projWinRate: "胜率",
+    estUsage: "使用率",
+    defScore: "联防分",
+    offScore: "进攻分",
+    defDesc: "轮转安全性与属性抗性覆盖",
+    offDesc: "集火效率与AOE叠加潜力",
 
     // Calculator
     defAnalysis: "防御面分析",
