@@ -283,11 +283,11 @@ export const PokemonAnalyzer: React.FC<Props> = ({
   };
 
   const chartData = data ? [
-    { subject: 'HP', A: data.stats.hp, B: data.comparisonStats?.hp || 0, fullMark: 255 },
-    { subject: 'Atk', A: data.stats.attack, B: data.comparisonStats?.attack || 0, fullMark: 190 },
-    { subject: 'Def', A: data.stats.defense, B: data.comparisonStats?.defense || 0, fullMark: 250 },
-    { subject: 'SpA', A: data.stats.spAtk, B: data.comparisonStats?.spAtk || 0, fullMark: 194 },
-    { subject: 'SpD', A: data.stats.spDef, B: data.comparisonStats?.spDef || 0, fullMark: 250 },
+    { subject: t.statHP, A: data.stats.hp, B: data.comparisonStats?.hp || 0, fullMark: 255 },
+    { subject: t.statAtk, A: data.stats.attack, B: data.comparisonStats?.attack || 0, fullMark: 190 },
+    { subject: t.statDef, A: data.stats.defense, B: data.comparisonStats?.defense || 0, fullMark: 250 },
+    { subject: t.statSpA, A: data.stats.spAtk, B: data.comparisonStats?.spAtk || 0, fullMark: 194 },
+    { subject: t.statSpD, A: data.stats.spDef, B: data.comparisonStats?.spDef || 0, fullMark: 250 },
     { subject: generation === 'legends-za' ? t.statSpeed : 'SPE', A: data.stats.speed, B: data.comparisonStats?.speed || 0, fullMark: 200 },
   ] : [];
 
@@ -301,6 +301,11 @@ export const PokemonAnalyzer: React.FC<Props> = ({
     const list = lang === 'zh' ? data?.coverageZh : data?.coverageEn;
     return (list || []).filter(t => t && t.toLowerCase() !== 'none' && t !== '无' && t !== '无属性');
   };
+
+  const getMovepool = () => {
+    const list = lang === 'zh' ? data?.movepoolZh : data?.movepoolEn;
+    return (list || []).filter(m => m && m.length > 0);
+  }
   
   const getPartners = () => lang === 'zh' ? data?.partnersZh : data?.partnersEn;
 
@@ -310,19 +315,13 @@ export const PokemonAnalyzer: React.FC<Props> = ({
       const getTooltipStyle = () => {
           if (!hoveredNode) return { display: 'none' };
           
-          // Calculate node's position in screen space within the container
           const nodeScreenX = transform.x + hoveredNode.x * transform.scale;
           const nodeScreenY = transform.y + hoveredNode.y * transform.scale;
           
-          // Basic Bounds Checking Logic
-          // Assume Container Width ~ 100% or 1100px max, Height ~ 500px
-          // This logic tries to keep tooltip visible
           let left = nodeScreenX + 15 * transform.scale + 10;
           let top = nodeScreenY + 15 * transform.scale + 10;
 
-          // If overflowing right (rough estimate), flip left
           if (left > 800) left = nodeScreenX - 220; 
-          // If overflowing bottom, flip up
           if (top > 400) top = nodeScreenY - 100;
 
           return {
@@ -332,7 +331,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
       };
 
       return (
-          // Main Container - NO overflow:hidden here to allow tooltip to poke out if positioned absolutely relative to this
           <div ref={containerRef} className="w-full h-[500px] relative flex justify-center items-center select-none bg-slate-50/50 dark:bg-black/20 rounded-xl border border-gray-200 dark:border-white/5 group">
              
              {/* Controls Overlay */}
@@ -340,13 +338,13 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                  <button 
                     onClick={() => setTransform({x: 0, y: 0, scale: 1})}
                     className="bg-white dark:bg-za-panel border border-gray-200 dark:border-white/10 p-2 rounded shadow-sm text-xs font-bold hover:bg-gray-100 dark:hover:bg-white/10"
-                    title="Reset View"
+                    title={t.resetView}
                  >
-                    RESET
+                    {t.resetView}
                  </button>
              </div>
 
-             {/* Hover Tooltip Overlay - Rendered OUTSIDE SVG to avoid clipping, Positioned Dynamically */}
+             {/* Hover Tooltip Overlay */}
              {hoveredNode && (
                  <div 
                     className="absolute z-50 pointer-events-none bg-gray-900/95 backdrop-blur text-white text-xs p-3 rounded shadow-xl border border-white/10 w-48 animate-fade-in origin-top-left"
@@ -367,7 +365,7 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                  </div>
              )}
 
-             {/* SVG Container with Overflow Hidden to clip graph but not tooltip */}
+             {/* SVG Container */}
              <div className="absolute inset-0 overflow-hidden rounded-xl">
                 <svg 
                     ref={svgRef}
@@ -393,12 +391,10 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                     </defs>
                     
                     <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}>
-                        {/* 1. Draw Mesh Connections (Between Opponents) */}
                         {nodes.map((nodeA, i) => {
                             return nodes.map((nodeB, j) => {
-                                if (i >= j) return null; // Avoid duplicate checks
+                                if (i >= j) return null;
                                 
-                                // Determine types
                                 const typesA = (nodeA.opponentTypes || []).map(t => 
                                     t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
                                 ) as PokemonType[];
@@ -417,7 +413,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                     typesA.forEach(def => multBtoA = Math.max(multBtoA, getEffectiveness(atk, def)));
                                 });
 
-                                // Draw Line if significant interaction
                                 if (multAtoB > 1 || multBtoA > 1) {
                                     const isStrong = multAtoB >= 2 || multBtoA >= 2;
                                     const isHovered = hoveredLink && (
@@ -427,7 +422,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
 
                                     return (
                                         <g key={`mesh-group-${i}-${j}`}>
-                                            {/* Hit Area (Invisible thick line for easier hover) */}
                                             <line 
                                                 x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} 
                                                 stroke="transparent" 
@@ -436,7 +430,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                                 onMouseEnter={() => setHoveredLink({ u: nodeA.id, v: nodeB.id })}
                                                 onMouseLeave={() => setHoveredLink(null)}
                                             />
-                                            {/* Visible Line */}
                                             <line 
                                                 x1={nodeA.x} y1={nodeA.y} x2={nodeB.x} y2={nodeB.y} 
                                                 stroke={isStrong ? "#a855f7" : "#cbd5e1"} 
@@ -452,7 +445,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                             });
                         })}
 
-                        {/* 2. Draw Main Connections (Center to Nodes) */}
                         {nodes.map((node, i) => {
                             const color = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
                             const marker = node.result === 'win' ? 'url(#arrow-win)' : node.result === 'lose' ? 'url(#arrow-lose)' : '';
@@ -470,7 +462,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                             );
                         })}
                         
-                        {/* 3. Center Node (Fixed) */}
                         <g transform={`translate(${centerNodePos.x}, ${centerNodePos.y})`}>
                             <polygon 
                                 points="-25,-43 25,-43 50,0 25,43 -25,43 -50,0" 
@@ -486,12 +477,9 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                             />
                         </g>
 
-                        {/* 4. Draggable Nodes */}
                         {nodes.map((node, i) => {
                             const resultColor = node.result === 'win' ? '#22c55e' : node.result === 'lose' ? '#ef4444' : '#eab308';
                             const opponentName = lang === 'zh' ? node.opponentZh : node.opponentEn;
-                            
-                            // Check if this node is part of the hovered link
                             const isLinked = hoveredLink && (hoveredLink.u === node.id || hoveredLink.v === node.id);
 
                             return (
@@ -511,7 +499,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                         strokeWidth={node.isDragging || isLinked ? 3 : 1.5} 
                                         className="transition-all duration-200"
                                     />
-                                    
                                     <image 
                                         href={getPokemonSpriteUrl(node.opponentEn)} 
                                         x="-20" y="-20" width="40" height="40" 
@@ -520,8 +507,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                             (e.target as SVGImageElement).href.baseVal = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
                                         }}
                                     />
-
-                                    {/* Text Label */}
                                     <foreignObject x="-40" y="24" width="80" height="20">
                                         <div className={`text-[9px] font-bold text-center bg-black/70 rounded text-white px-1 overflow-hidden text-ellipsis whitespace-nowrap`}>
                                             {opponentName}
@@ -557,6 +542,26 @@ export const PokemonAnalyzer: React.FC<Props> = ({
             {loading ? t.analyzingBtn : t.analyzeBtn}
             </button>
         </div>
+        
+        {/* NEW: Related Forms / Mega Switcher */}
+        {data && data.relatedForms && data.relatedForms.length > 0 && (
+             <div className="flex items-center gap-3 animate-fade-in">
+                <span className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide">
+                    {t.switchForm}:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                    {data.relatedForms.map((form) => (
+                        <button
+                            key={form}
+                            onClick={() => handleAnalyze(form)}
+                            className="px-3 py-1 bg-white dark:bg-za-panel border border-za-magenta/30 hover:bg-za-magenta hover:text-white text-za-magenta rounded-full text-xs font-bold transition-all shadow-sm"
+                        >
+                            {form}
+                        </button>
+                    ))}
+                </div>
+             </div>
+        )}
       </div>
 
       {error && (
@@ -638,7 +643,7 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                 </ul>
               </div>
 
-              {/* Coverage Types - Only show if valid data exists */}
+              {/* Coverage Types */}
               {getCoverage().length > 0 && (
                   <div className="bg-white dark:bg-za-panel/50 border border-yellow-500/30 rounded-xl p-5 shadow-sm">
                      <h3 className="text-yellow-600 dark:text-yellow-400 font-display mb-3 flex items-center gap-2">
@@ -667,9 +672,26 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                   ))}
                 </div>
              </div>
+
+             {/* NEW: Movepool Section */}
+             {getMovepool().length > 0 && (
+                <div className="md:col-span-2 bg-white dark:bg-za-panel/50 border border-gray-200 dark:border-white/10 rounded-xl p-5 shadow-sm">
+                    <h3 className="text-slate-600 dark:text-gray-300 font-display mb-3 flex items-center gap-2 font-bold">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                         {t.movepool}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                        {getMovepool().map((move, i) => (
+                             <span key={i} className="px-3 py-1 bg-slate-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded text-xs text-slate-600 dark:text-gray-400 font-mono hover:border-za-cyan/30 transition-colors">
+                                 {move}
+                             </span>
+                        ))}
+                    </div>
+                </div>
+             )}
             </div>
 
-            {/* Battle Topology (Matchup Network) */}
+            {/* Battle Topology */}
             {data.matchupNetwork && data.matchupNetwork.length > 0 && (
                 <div className="bg-white dark:bg-za-panel/50 border border-purple-500/30 rounded-xl p-5 shadow-sm transition-all duration-500">
                     <div className="flex justify-between items-center mb-4">
@@ -677,7 +699,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                             <span className="w-2 h-2 rounded-full bg-purple-500"></span>
                             {t.battleTopology}
                         </h3>
-                        {/* Toggle Advanced View */}
                         <div className="flex items-center bg-gray-200 dark:bg-black/40 rounded-full p-1 border border-gray-300 dark:border-white/10">
                             <button 
                                 onClick={() => setAdvancedTopology(false)}
@@ -694,11 +715,7 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                         </div>
                     </div>
 
-                    {advancedTopology ? (
-                        // Force Directed Graph (SVG)
-                        renderForceDirectedGraph()
-                    ) : (
-                        // Simple Grid View
+                    {advancedTopology ? renderForceDirectedGraph() : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {data.matchupNetwork.map((node, index) => {
                                 const resultColor = node.result === 'win' ? 'border-green-500/50 bg-green-500/10' : 
@@ -706,7 +723,7 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                                     'border-yellow-500/50 bg-yellow-500/10';
                                 
                                 const resultIcon = node.result === 'win' ? '✓' : node.result === 'lose' ? '✕' : '=';
-                                const resultText = node.result === 'win' ? 'WIN' : node.result === 'lose' ? 'LOSE' : 'CHECK';
+                                const resultText = node.result === 'win' ? t.resultWin : node.result === 'lose' ? t.resultLose : t.resultCheck;
                                 const opponentName = lang === 'zh' ? node.opponentZh : node.opponentEn;
                                 const description = lang === 'zh' ? node.descriptionZh : node.descriptionEn;
 
@@ -735,8 +752,6 @@ export const PokemonAnalyzer: React.FC<Props> = ({
                                                 {opponentName}
                                             </span>
                                         </div>
-                                        
-                                        {/* Tooltip */}
                                         <div className="absolute opacity-0 group-hover:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-gray-900 text-white text-xs p-3 rounded shadow-xl pointer-events-none transition-opacity z-50">
                                             <div className="font-bold mb-1 border-b border-white/20 pb-1">{opponentName} ({resultText})</div>
                                             {description}

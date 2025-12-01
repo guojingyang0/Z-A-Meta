@@ -1,7 +1,8 @@
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { ViewState, Language, Theme, Generation, GENERATIONS, Regulation, SEASONS } from '../types';
 import { TRANSLATIONS } from '../utils/translations';
+import { SettingsModal } from './SettingsModal';
 
 interface Props {
   children: ReactNode;
@@ -15,26 +16,35 @@ interface Props {
   setGeneration: (gen: Generation) => void;
   season: Regulation;
   setSeason: (season: Regulation) => void;
+  onSettingsChanged?: () => void;
 }
 
 export const Layout: React.FC<Props> = ({ 
   children, currentView, setView, 
   lang, setLang, theme, toggleTheme,
   generation, setGeneration,
-  season, setSeason
+  season, setSeason,
+  onSettingsChanged
 }) => {
   const t = TRANSLATIONS[lang];
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const navItems: { id: ViewState; label: string; icon: string }[] = [
     { id: 'meta', label: t.meta, icon: 'M' },
     { id: 'analyze', label: t.analyzer, icon: 'A' },
-    { id: 'synergy', label: t.synergy, icon: 'S' },
     { id: 'team', label: t.builder, icon: 'B' },
     { id: 'calculator', label: t.typeChart, icon: 'T' },
   ];
 
   return (
     <div className="min-h-screen pb-24 md:pb-0 md:pt-20 transition-colors duration-300">
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        onSettingsChanged={onSettingsChanged}
+        lang={lang}
+      />
+      
       {/* Top Desktop Nav */}
       <nav className="hidden md:flex fixed top-0 w-full bg-za-light/90 dark:bg-za-dark/90 backdrop-blur-md border-b border-gray-200 dark:border-white/10 z-50 px-8 py-4 items-center justify-between shadow-sm dark:shadow-none">
         <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setView('meta')}>
@@ -135,6 +145,15 @@ export const Layout: React.FC<Props> = ({
                 </div>
              )}
 
+             {/* Settings Button */}
+             <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="mt-4 p-1.5 rounded-full bg-gray-100 dark:bg-white/10 text-slate-600 dark:text-gray-300 hover:text-za-cyan hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                title={t.settingsBtn}
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+             </button>
+
              {/* Language Switch */}
              <button 
                 onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
@@ -187,6 +206,15 @@ export const Layout: React.FC<Props> = ({
         
         {/* Mobile Top Bar Controls - Just simplified for mobile */}
         <div className="absolute bottom-20 right-4 flex flex-col gap-2 items-end">
+             {/* Mobile Settings Button */}
+             <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="bg-za-dark/90 text-white p-3 rounded-full border border-gray-600 shadow-lg mb-2"
+                title={t.settingsBtn}
+             >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+             </button>
+
              {generation === 'legends-za' && (
                 <div className="bg-za-dark/90 p-2 rounded-lg border border-za-magenta/30 shadow-lg">
                     <div className="text-[10px] text-za-magenta font-bold mb-1 uppercase">{t.seasonZA}</div>

@@ -21,6 +21,15 @@ export enum PokemonType {
   None = 'None'
 }
 
+export type AIProvider = 'gemini' | 'openai';
+
+export interface AISettings {
+  provider: AIProvider;
+  apiKey: string;
+  baseUrl?: string;
+  model?: string;
+}
+
 export interface TypeMatchup {
   type: PokemonType;
   multiplier: number;
@@ -57,6 +66,8 @@ export interface PokemonAnalysis {
   comparisonStats?: PokemonStats;
   comparisonLabel?: string; 
   
+  relatedForms?: string[]; // e.g. ["Mega Charizard X", "Mega Charizard Y"]
+
   strengthsEn: string[];
   strengthsZh: string[];
   weaknessesEn: string[];
@@ -65,6 +76,10 @@ export interface PokemonAnalysis {
   // New: Coverage types (types of attacking moves usually carried)
   coverageEn: string[];
   coverageZh: string[];
+
+  // New: Full viable movepool
+  movepoolEn: string[];
+  movepoolZh: string[];
 
   partnersEn: string[];
   partnersZh: string[];
@@ -145,7 +160,7 @@ export interface MetaPokemonData {
   
   // Calculated fields
   winRate: number; // 0-100 (Calculated via Matrix)
-  usageRate: number; // 0-100 (AI Estimate)
+  usageRate: number; // 0-100 (Renamed logic to Dominance Score)
   
   keyMovesEn: string[];
   keyMovesZh: string[];

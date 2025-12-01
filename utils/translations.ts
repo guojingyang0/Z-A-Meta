@@ -18,7 +18,7 @@ export const TRANSLATIONS = {
     failedMeta: "Failed to retrieve meta analysis.",
     errorConnection: "Error connecting to Z-A Network.",
     winRate: "Win Rate",
-    usageRate: "Usage",
+    usageRate: "Dominance", 
     keyMoves: "Common Moves",
     
     // Pagination
@@ -45,6 +45,15 @@ export const TRANSLATIONS = {
     methodologyPoint3: "Mechanics Factor: Bonus points for AOE capabilities (Z-A engine) and high Mobility.",
     methodologyPoint4: "Final Win Rate = Stats (35%) + Matchup Matrix (45%) + Mechanics (20%).",
     methodologyNote: "This model ensures that Win Rates update dynamically based on the composition of the current meta environment.",
+    
+    // History / Storage
+    historyTitle: "Saved Data / History",
+    noHistory: "No offline data saved yet.",
+    dataManagement: "Data Persistence",
+    clearDbTitle: "Clear Local Database",
+    clearDbDesc: "Removes all saved Pokémon analysis and offline data.",
+    clearBtn: "Clear Data",
+    cleared: "Cleared!",
 
     // Analyzer
     enterPokemon: "Enter Pokémon Name (e.g. Flutter Mane)",
@@ -64,6 +73,19 @@ export const TRANSLATIONS = {
     battleTopology: "Battle Relationship Topology",
     viewSimple: "Simple",
     viewAdvanced: "Topology",
+    movepool: "Viable Movepool",
+    
+    // Analyzer Stats & Controls
+    resetView: "Reset View",
+    statHP: "HP",
+    statAtk: "Atk",
+    statDef: "Def",
+    statSpA: "SpA",
+    statSpD: "SpD",
+    resultWin: "WIN",
+    resultLose: "LOSE",
+    resultCheck: "CHECK",
+    switchForm: "Switch Form",
 
     // Builder
     builderTitle: "TACTICAL TEAM FABRICATOR",
@@ -72,7 +94,7 @@ export const TRANSLATIONS = {
     generateBtn: "GENERATE",
     buildingBtn: "BUILDING...",
     item: "ITEM",
-    ability: "特性",
+    ability: "ABILITY",
     nature: "NATURE",
     moveset: "MOVESET",
 
@@ -102,6 +124,29 @@ export const TRANSLATIONS = {
     resistances: "Resistances",
     noWeakness: "No weaknesses found.",
     noResistance: "No resistances found.",
+
+    // Settings
+    settingsTitle: "API CONFIGURATION",
+    settingsBtn: "API Settings",
+    settingsDesc: "Configure external API endpoints to bypass rate limits or use custom models.",
+    providerGemini: "Google GenAI Format",
+    providerOpenAI: "Compatible Format",
+    apiKeyLabel: "API KEY",
+    baseUrlLabel: "BASE URL (OPTIONAL)",
+    baseUrlDesc: "Leave empty for default official endpoints.",
+    modelLabel: "MODEL OVERRIDE (OPTIONAL)",
+    modelPlaceholder: "e.g. gemini-2.0-flash",
+    testConnection: "Test Connection",
+    testing: "Testing...",
+    connectionSuccess: "Connected Successfully!",
+    connectionFailed: "Connection Failed",
+    resetBtn: "RESET TO DEFAULT",
+    cancelBtn: "CANCEL",
+    saveBtn: "SAVE & APPLY",
+    
+    // Errors
+    retryConnection: "Retry Connection",
+    checkConnection: "Check your connection or try again.",
   },
   zh: {
     appTitle: "Z-A META",
@@ -121,8 +166,8 @@ export const TRANSLATIONS = {
     failedMeta: "无法获取环境分析报告。",
     errorConnection: "连接 Z-A 网络失败。",
     winRate: "胜率",
-    usageRate: "使用率",
-    keyMoves: "常见配招",
+    usageRate: "统治力",
+    keyMoves: "常用配招",
     
     // Pagination
     prevPage: "上一页",
@@ -149,6 +194,15 @@ export const TRANSLATIONS = {
     methodologyPoint4: "最终胜率公式 = 种族分(35%) + 对战矩阵分(45%) + 机制分(20%)。",
     methodologyNote: "该模型确保胜率会根据当前环境（Meta）的宝可梦构成动态变化，而非固定数值。",
 
+    // History / Storage
+    historyTitle: "历史记录 / 已存数据",
+    noHistory: "暂无离线数据。",
+    dataManagement: "数据持久化",
+    clearDbTitle: "清除本地数据库",
+    clearDbDesc: "删除所有已保存的宝可梦分析和离线缓存。",
+    clearBtn: "清除数据",
+    cleared: "已清除!",
+
     // Analyzer
     enterPokemon: "输入宝可梦名称 (例如: 振翼发)",
     analyzeBtn: "单体分析",
@@ -167,6 +221,19 @@ export const TRANSLATIONS = {
     battleTopology: "对战关系图",
     viewSimple: "简单",
     viewAdvanced: "拓扑模式",
+    movepool: "可行技能池",
+    
+    // Analyzer Stats & Controls
+    resetView: "重置视图",
+    statHP: "HP",
+    statAtk: "物攻",
+    statDef: "物防",
+    statSpA: "特攻",
+    statSpD: "特防",
+    resultWin: "胜",
+    resultLose: "负",
+    resultCheck: "平",
+    switchForm: "切换形态 / 进化",
 
     // Builder
     builderTitle: "战术队伍构建器",
@@ -205,5 +272,28 @@ export const TRANSLATIONS = {
     resistances: "抗性 (抵抗)",
     noWeakness: "未发现弱点。",
     noResistance: "未发现抗性。",
+
+    // Settings
+    settingsTitle: "API 配置",
+    settingsBtn: "API 设置",
+    settingsDesc: "配置外部 API 端点以绕过速率限制或使用自定义模型。",
+    providerGemini: "Google GenAI 格式",
+    providerOpenAI: "兼容格式 (OpenAI)",
+    apiKeyLabel: "API 密钥",
+    baseUrlLabel: "基础 URL (可选)",
+    baseUrlDesc: "留空以使用默认官方端点。",
+    modelLabel: "模型覆盖 (可选)",
+    modelPlaceholder: "例如: gemini-2.0-flash",
+    testConnection: "测试连接",
+    testing: "测试中...",
+    connectionSuccess: "连接成功!",
+    connectionFailed: "连接失败",
+    resetBtn: "恢复默认",
+    cancelBtn: "取消",
+    saveBtn: "保存并应用",
+    
+    // Errors
+    retryConnection: "重试连接",
+    checkConnection: "请检查网络连接或稍后重试。",
   }
 };
